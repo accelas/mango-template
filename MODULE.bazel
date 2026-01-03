@@ -41,3 +41,14 @@ bazel_dep(name = "googletest", version = "1.15.2")
 # ============================================================================
 
 register_toolchains("//toolchain:cc_toolchain_for_k8")
+
+# ============================================================================
+# Development Tools
+# ============================================================================
+
+bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
+git_override(
+    module_name = "hedron_compile_commands",
+    remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
+    commit = "abb61a688167623088f8768cc9264798df6a9d10",
+)
