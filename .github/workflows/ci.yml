@@ -44,8 +44,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/bazel
-          key: bazel-build-${{ runner.os }}-${{ hashFiles('.bazelversion', 'MODULE.bazel') }}
+          key: bazel-build-${{ runner.os }}-${{ hashFiles('.bazelversion', 'MODULE.bazel') }}-${{ github.sha }}
           restore-keys: |
+            bazel-build-${{ runner.os }}-${{ hashFiles('.bazelversion', 'MODULE.bazel') }}-
             bazel-build-${{ runner.os }}-
 
       - name: Build all targets
