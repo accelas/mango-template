@@ -189,6 +189,115 @@ def _impl(ctx):
         ],
     )
 
+    # Dead code elimination: put each function/data in its own section
+    # so the linker can discard unreferenced ones with --gc-sections
+    function_sections_feature = feature(
+        name = "function_sections",
+        flag_sets = [
+            flag_set(
+                actions = [
+                    ACTION_NAMES.c_compile,
+                    ACTION_NAMES.cpp_compile,
+                    ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_codegen,
+                ],
+                flag_groups = [
+                    flag_group(flags = ["-ffunction-sections", "-fdata-sections"]),
+                ],
+            ),
+            flag_set(
+                actions = [
+                    ACTION_NAMES.cpp_link_executable,
+                    ACTION_NAMES.cpp_link_dynamic_library,
+                    ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+                ],
+                flag_groups = [
+                    flag_group(flags = ["-Wl,--gc-sections"]),
+                ],
+            ),
+        ],
+    )
+
+    # Link-Time Optimization for cross-TU dead code elimination and inlining
+    lto_feature = feature(
+        name = "lto",
+        flag_sets = [
+            flag_set(
+                actions = [
+                    ACTION_NAMES.c_compile,
+                    ACTION_NAMES.cpp_compile,
+                    ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_codegen,
+                ],
+                flag_groups = [
+                    flag_group(flags = ["-flto"]),
+                ],
+            ),
+            flag_set(
+                actions = [
+                    ACTION_NAMES.cpp_link_executable,
+                    ACTION_NAMES.cpp_link_dynamic_library,
+                    ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+                ],
+                flag_groups = [
+                    flag_group(flags = ["-flto"]),
+                ],
+            ),
+        ],
+    )
+
+    # Additional release optimizations: merge constants, drop ident,
+    # linker optimization, as-needed, and identical code folding
+    release_extras_feature = feature(
+        name = "release_extras",
+        flag_sets = [
+            flag_set(
+                actions = [
+                    ACTION_NAMES.c_compile,
+                    ACTION_NAMES.cpp_compile,
+                    ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_codegen,
+                ],
+                flag_groups = [
+                    flag_group(flags = [
+                        "-fmerge-all-constants",
+                        "-fno-ident",
+                    ]),
+                ],
+            ),
+            flag_set(
+                actions = [
+                    ACTION_NAMES.cpp_link_executable,
+                    ACTION_NAMES.cpp_link_dynamic_library,
+                    ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+                ],
+                flag_groups = [
+                    flag_group(flags = [
+                        "-Wl,-O2",
+                        "-Wl,--as-needed",
+                    ]),
+                ],
+            ),
+        ],
+    )
+
+    # Strip debug info and unneeded symbols from release binaries
+    strip_release_feature = feature(
+        name = "strip_release",
+        flag_sets = [
+            flag_set(
+                actions = [
+                    ACTION_NAMES.cpp_link_executable,
+                    ACTION_NAMES.cpp_link_dynamic_library,
+                    ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+                ],
+                flag_groups = [
+                    flag_group(flags = ["-Wl,--strip-all"]),
+                ],
+            ),
+        ],
+    )
+
     # Default linker flags
     default_link_flags_feature = feature(
         name = "default_link_flags",
@@ -260,6 +369,10 @@ def _impl(ctx):
             warnings_feature,
             werror_feature,
             baseline_isa_feature,
+            function_sections_feature,
+            lto_feature,
+            release_extras_feature,
+            strip_release_feature,
             default_link_flags_feature,
             preprocessor_defines_feature,
         ],
